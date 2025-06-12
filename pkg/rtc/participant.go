@@ -994,9 +994,11 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 						pti.sdpRids[i] = ""
 					}
 
+					slices.Sort(rids)
+
 					n := min(len(rids), len(pti.sdpRids))
 					for i := 0; i < n; i++ {
-						pti.sdpRids[i] = rids[n-1-i]
+						pti.sdpRids[i] = rids[i]
 					}
 
 					p.pubLogger.Debugw(
