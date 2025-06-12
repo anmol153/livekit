@@ -995,6 +995,7 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 					}
 
 					slices.Sort(rids)
+					slices.Reverse(rids)
 
 					n := min(len(rids), len(pti.sdpRids))
 					for i := 0; i < n; i++ {
