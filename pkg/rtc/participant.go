@@ -990,16 +990,15 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 				p.pendingTracksLock.Lock()
 				pti := p.pendingTracks[cid]
 				if pti != nil {
-					for i := 0; i < len(pti.sdpRids); i++ {
-						pti.sdpRids[i] = ""
-					}
-
 					slices.Sort(rids)
 					slices.Reverse(rids)
 
 					n := min(len(rids), len(pti.sdpRids))
 					for i := 0; i < n; i++ {
 						pti.sdpRids[i] = rids[i]
+					}
+					for i := n; i < len(pti.sdpRids); i++ {
+						pti.sdpRids[i] = ""
 					}
 
 					p.pubLogger.Debugw(
@@ -1042,13 +1041,12 @@ func (p *ParticipantImpl) updateRidsFromSDP(offer *webrtc.SessionDescription) {
 			// does not work for clients that use a different media stream track in SDP (e.g. Firefox)
 			// one option is to look up by track type, but that fails when there are multiple pending tracks
 			// of the same type
-			for i := 0; i < len(pti.sdpRids); i++ {
-				pti.sdpRids[i] = ""
-			}
-
 			n := min(len(rids), len(pti.sdpRids))
 			for i := 0; i < n; i++ {
 				pti.sdpRids[i] = rids[i]
+			}
+			for i := n; i < len(pti.sdpRids); i++ {
+				pti.sdpRids[i] = ""
 			}
 
 			p.pubLogger.Debugw(
