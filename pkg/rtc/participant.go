@@ -984,6 +984,30 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 			}
 		}
 		p.AddTrack(req)
+
+		if strings.EqualFold(m.MediaName.Media, "video") {
+			if ridsOk {
+				p.pendingTracksLock.Lock()
+				pti := p.pendingTracks[cid]
+				if pti != nil {
+					for i := 0; i < len(pti.sdpRids); i++ {
+						pti.sdpRids[i] = ""
+					}
+
+					n := min(len(rids), len(pti.sdpRids))
+					for i := 0; i < n; i++ {
+						pti.sdpRids[i] = rids[n-1-i]
+					}
+
+					p.pubLogger.Debugw(
+						"pending track rids updated",
+						"trackID", pti.trackInfos[0].Sid,
+						"pendingTrack", pti,
+					)
+				}
+				p.pendingTracksLock.Unlock()
+			}
+		}
 	}
 	return nil
 }
@@ -1015,6 +1039,10 @@ func (p *ParticipantImpl) updateRidsFromSDP(offer *webrtc.SessionDescription) {
 			// does not work for clients that use a different media stream track in SDP (e.g. Firefox)
 			// one option is to look up by track type, but that fails when there are multiple pending tracks
 			// of the same type
+			for i := 0; i < len(pti.sdpRids); i++ {
+				pti.sdpRids[i] = ""
+			}
+
 			n := min(len(rids), len(pti.sdpRids))
 			for i := 0; i < n; i++ {
 				pti.sdpRids[i] = rids[i]
@@ -1046,7 +1074,9 @@ func (p *ParticipantImpl) HandleOffer(offer webrtc.SessionDescription) error {
 	}
 
 	offer = p.setCodecPreferencesForPublisher(offer)
-	p.updateRidsFromSDP(&offer)
+	if !p.params.UseOneShotSignallingMode {
+		p.updateRidsFromSDP(&offer)
+	}
 	err := p.TransportManager.HandleOffer(offer, shouldPend)
 	if p.params.UseOneShotSignallingMode {
 		if onSubscriberReady := p.getOnSubscriberReady(); onSubscriberReady != nil {
