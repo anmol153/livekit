@@ -986,10 +986,10 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 		p.AddTrack(req)
 
 		if strings.EqualFold(m.MediaName.Media, "video") {
-			if ridsOk {
-				p.pendingTracksLock.Lock()
-				pti := p.pendingTracks[cid]
-				if pti != nil {
+			p.pendingTracksLock.Lock()
+			pti := p.pendingTracks[cid]
+			if pti != nil {
+				if ridsOk {
 					slices.Sort(rids)
 					slices.Reverse(rids)
 
@@ -1006,9 +1006,13 @@ func (p *ParticipantImpl) synthesizeAddTrackRequests(offer webrtc.SessionDescrip
 						"trackID", pti.trackInfos[0].Sid,
 						"pendingTrack", pti,
 					)
+				} else {
+					for i := 0; i < len(pti.sdpRids); i++ {
+						pti.sdpRids[i] = ""
+					}
 				}
-				p.pendingTracksLock.Unlock()
 			}
+			p.pendingTracksLock.Unlock()
 		}
 	}
 	return nil
